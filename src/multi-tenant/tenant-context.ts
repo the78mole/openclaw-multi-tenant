@@ -20,9 +20,6 @@ export function isSafeTenantId(id: string): boolean {
   if (!id || typeof id !== "string") {
     return false;
   }
-  if (id.includes("..") || id.includes("/") || id.includes("\\") || id.includes("\0")) {
-    return false;
-  }
   return SAFE_ID_RE.test(id);
 }
 

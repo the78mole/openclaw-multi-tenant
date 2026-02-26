@@ -237,6 +237,7 @@ describe("extractTenantFromRequest", () => {
   });
 
   it("rejects token with missing user_id", async () => {
+    // Type assertion needed to test runtime validation with intentionally invalid claims
     const token = await createTestToken(
       { user_id: "", persona_id: "privat" } as Record<string, unknown>,
       TEST_SECRET,
@@ -248,6 +249,7 @@ describe("extractTenantFromRequest", () => {
   });
 
   it("rejects token with missing persona_id", async () => {
+    // Type assertion needed to test runtime validation with intentionally invalid claims
     const token = await createTestToken(
       { user_id: "alice", persona_id: "" } as Record<string, unknown>,
       TEST_SECRET,

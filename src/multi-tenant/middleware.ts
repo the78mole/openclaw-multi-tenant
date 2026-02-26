@@ -28,7 +28,7 @@ export function requireRequestTenant(req: IncomingMessage): TenantContext {
   const tenant = requestTenantMap.get(req);
   if (!tenant) {
     throw new Error(
-      "tenant context required but not found on request — ensure JWT auth middleware is active",
+      "tenant context required but not found on request - ensure JWT auth middleware is active",
     );
   }
   return tenant;
