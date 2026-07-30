@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { openBoundaryFile } from "../infra/boundary-file-read.js";
 import { resolveRequiredHomeDir } from "../infra/home-dir.js";
+import { resolveTenantWorkspaceDir, type TenantContext } from "../multi-tenant/tenant-context.js";
 import { runCommandWithTimeout } from "../process/exec.js";
 import { isCronSessionKey, isSubagentSessionKey } from "../routing/session-key.js";
 import { resolveUserPath } from "../utils.js";
@@ -22,6 +23,21 @@ export function resolveDefaultAgentWorkspaceDir(
 }
 
 export const DEFAULT_AGENT_WORKSPACE_DIR = resolveDefaultAgentWorkspaceDir();
+
+/**
+ * Resolve a tenant-scoped workspace directory.
+ * In multi-tenant mode, each user+persona combination gets an isolated workspace.
+ * Default base: /workspaces (override via OPENCLAW_TENANT_WORKSPACE_BASE).
+ *
+ * Path format: {base}/{userId}/{personaId}
+ */
+export function resolveTenantAgentWorkspaceDir(
+  tenant: TenantContext,
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const base = env.OPENCLAW_TENANT_WORKSPACE_BASE?.trim() || "/workspaces";
+  return resolveTenantWorkspaceDir(base, tenant);
+}
 export const DEFAULT_AGENTS_FILENAME = "AGENTS.md";
 export const DEFAULT_SOUL_FILENAME = "SOUL.md";
 export const DEFAULT_TOOLS_FILENAME = "TOOLS.md";

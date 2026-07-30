@@ -1,4 +1,6 @@
 import type { ChatType } from "../channels/chat-type.js";
+import type { TenantContext } from "../multi-tenant/tenant-context.js";
+import { buildTenantSessionKeyPrefix } from "../multi-tenant/tenant-context.js";
 import { parseAgentSessionKey, type ParsedAgentSessionKey } from "../sessions/session-key-utils.js";
 import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "./account-id.js";
 
@@ -238,4 +240,23 @@ export function resolveThreadSessionKeys(params: {
     ? `${params.baseSessionKey}:thread:${normalizedThreadId}`
     : params.baseSessionKey;
   return { sessionKey, parentSessionKey: params.parentSessionKey };
+}
+
+/**
+ * Build a tenant-scoped agent session key.
+ * Wraps the standard agent session key with a tenant prefix for multi-tenant isolation.
+ *
+ * Format: tenant:{userId}:{personaId}:agent:{agentId}:{mainKey}
+ */
+export function buildTenantAgentSessionKey(params: {
+  tenant: TenantContext;
+  agentId: string;
+  mainKey?: string | undefined;
+}): string {
+  const tenantPrefix = buildTenantSessionKeyPrefix(params.tenant);
+  const agentKey = buildAgentMainSessionKey({
+    agentId: params.agentId,
+    mainKey: params.mainKey,
+  });
+  return `${tenantPrefix}:${agentKey}`;
 }

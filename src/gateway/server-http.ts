@@ -17,6 +17,7 @@ import {
 import type { CanvasHostHandler } from "../canvas-host/server.js";
 import { loadConfig } from "../config/config.js";
 import type { createSubsystemLogger } from "../logging/subsystem.js";
+import { tenantAuthMiddleware, type JwtAuthConfig } from "../multi-tenant/middleware.js";
 import { safeEqualSecret } from "../security/secret-equal.js";
 import { handleSlackHttpRequest } from "../slack/http/index.js";
 import {
@@ -464,6 +465,8 @@ export function createGatewayHttpServer(opts: {
   /** Optional rate limiter for auth brute-force protection. */
   rateLimiter?: AuthRateLimiter;
   tlsOptions?: TlsOptions;
+  /** Optional multi-tenant JWT auth config. When set, all API requests require a valid JWT. */
+  tenantAuth?: JwtAuthConfig;
 }): HttpServer {
   const {
     canvasHost,
@@ -479,6 +482,7 @@ export function createGatewayHttpServer(opts: {
     handlePluginRequest,
     resolvedAuth,
     rateLimiter,
+    tenantAuth,
   } = opts;
   const httpServer: HttpServer = opts.tlsOptions
     ? createHttpsServer(opts.tlsOptions, (req, res) => {
@@ -499,6 +503,15 @@ export function createGatewayHttpServer(opts: {
     }
 
     try {
+      // Multi-tenant JWT auth: if configured, validate JWT and extract tenant context
+      // before processing any request. Rejected requests get a 401 response.
+      if (tenantAuth) {
+        const rejected = await tenantAuthMiddleware(req, res, tenantAuth);
+        if (rejected) {
+          return;
+        }
+      }
+
       const configSnapshot = loadConfig();
       const trustedProxies = configSnapshot.gateway?.trustedProxies ?? [];
       const allowRealIpFallback = configSnapshot.gateway?.allowRealIpFallback === true;
